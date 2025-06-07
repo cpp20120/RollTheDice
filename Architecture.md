@@ -7,7 +7,7 @@ Games:
 
 Year  confirmation at User service
 CrypotGraphic random(System.Security.Cryptography)
-No real money just 
+No real money just Bipcki(virtual money)
 ### Modules
 ```mermaid
 flowchart TD
