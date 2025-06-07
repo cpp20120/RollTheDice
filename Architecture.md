@@ -6,8 +6,11 @@ Games:
 * black jack
 
 Year  confirmation at User service
+
 CrypotGraphic random(System.Security.Cryptography)
-No real money just 
+
+No real money just  Bipki( virtual currency)
+
 ### Modules
 ```mermaid
 flowchart TD
