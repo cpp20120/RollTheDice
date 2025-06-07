@@ -604,7 +604,7 @@ sequenceDiagram
     end
 ```
 
-### Ребалансировка столов
+### Table rebalancing
 ```mermaid
 flowchart LR
     subgraph Tournament
