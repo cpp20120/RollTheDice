@@ -6,7 +6,8 @@ Games:
 
 Year  confirmation at User service
 CrypotGraphic random(System.Security.Cryptography)
-No real money just 
+No real money just virtual credits
+
 ### Modules
 ```mermaid
 flowchart TD
