@@ -3,11 +3,11 @@ Games:
 * poker need to do FSM
 * horse race
 * slots
+* black jack
 
 Year  confirmation at User service
 CrypotGraphic random(System.Security.Cryptography)
-No real money just virtual credits
-
+No real money just 
 ### Modules
 ```mermaid
 flowchart TD
@@ -37,6 +37,7 @@ flowchart TD
         P[Poker.Module]
         S[Slots.Module]
         R[Racing.Module]
+        BJ[Blackjack.Module]
         U[User.Module]
         N[Notifications]
         A[Analytics]
@@ -46,31 +47,35 @@ flowchart TD
 
     A1 --> BFF_Tg --> APIGW
     A2 --> BFF_Web --> APIGW
-    APIGW --> CB --> P & S & R & U & AC_Proxy
+    APIGW --> CB --> P & S & R & BJ & U & AC_Proxy
     CB --> RL
     AC_Proxy --> AC
 
     P -->|ReserveFundsCommand| AC
     S -->|DebitFundsCommand| AC
+    BJ -->|SplitBetCommand| AC
     R -->|PayoutCommand| AC
     U -->|GetBalanceQuery| AC
 
     P -->|Events| Bus --> A & N & Audit & AC
     S -->|Events| Bus
     R -->|Events| Bus
+    BJ -->|Event| Bus
     AC -->|TransactionEvents| Bus
 
     P --> Cache
     S --> Cache
+    BJ --> Cache
     N --> Cache
     AC --> Cache
 
     Audit --> DB
     P --> DB
+    BJ --> DB
     U --> DB
     AC --> LedgerDB
 
-    Monitoring -.-> P & S & R & Bus & AC
+    Monitoring -.-> P & S & R & BJ & Bus & AC
     
     %% Новые политики CB
     CB -->|Fallback| CB_Policy["Accounting CB Policy:
@@ -177,7 +182,51 @@ flowchart TD
     AcceptBets --> RaceFailed -->|Compensate| Accounting
     RaceCompleted -->|CreditWinners| Accounting
 ```
-## Data Flow
+
+Blackcjack
+```mermaid
+flowchart TD
+    subgraph Blackjack.Module
+        A[TableManager] --> B[GameSession]
+        B --> C[CardDealer]
+        C --> D[BasicStrategyEngine]
+        D --> E[PayoutCalculator]
+        F[ShoeManager] --> C
+        G[InsuranceService] --> B
+    end
+    
+    B -->|Events| H[(EventStore)]
+    E -->|Commands| Accounting
+```
+
+
+## Data Flow BlackJack
+```mermaid
+sequenceDiagram
+    participant Player
+    participant Blackjack
+    participant Accounting
+    participant RNG
+    
+    Player->>Blackjack: PlaceBet($10)
+    Blackjack->>Accounting: ReserveFunds(txId, $10)
+    Accounting-->>Blackjack: Reserved
+    Blackjack->>RNG: GetShuffledDeck(6 decks)
+    RNG-->>Blackjack: DeckId
+    Blackjack->>Player: DealCards(Player: K♠,9♥ | Dealer: A♦)
+    
+    alt Player chooses hit
+        Player->>Blackjack: Hit
+        Blackjack->>RNG: DrawCard
+        RNG-->>Blackjack: Q♣
+        Blackjack->>Player: NewHand(K♠,9♥,Q♣)
+    else Player stands
+        Player->>Blackjack: Stand
+        Blackjack->>Accounting: SettleBet(txId)
+    end
+```
+
+## Data Flow Racing
 ```mermaid
 sequenceDiagram
 participant User
@@ -344,6 +393,26 @@ flowchart TD
     B -->|"FundsReserved"| G
     F -->|"HandCompleted"| L[(EventStore)]
 ```
+Pocker waiting diagram
+```mermaid
+stateDiagram-v2
+    [*] --> WaitingForPlayers
+    WaitingForPlayers --> PreFlop: min 2 players
+    PreFlop --> Flop: all acted/timeout
+    Flop --> Turn: bets equalized
+    Turn --> River: bets equalized
+    River --> Showdown: last bet called
+    Showdown --> [*]
+    state "PlayerDecision" as PD {
+        [*] --> Check
+        Check --> Fold
+        Check --> Call
+        Call --> Raise
+    }
+    PreFlop --> PD
+    Flop --> PD
+```
+
 FSM <-> Saga at pocker
 ```mermaid
 sequenceDiagram
@@ -370,6 +439,41 @@ flowchart TD
     end
 ```
 
+
+### BlackJack FSM
+```mermaid
+flowchart LR
+	 subgraph Blackjack FSM
+        F[Betting] --> G[Dealing]
+        G --> H[Player Decisions]
+        H --> I[Dealer Draw]
+        I --> J[Payout]
+    end
+```
+
+### BlackJack Event Sourcing
+```mermaid
+flowchart TD
+    A[GameStarted] --> B[BetPlaced]
+    B --> C[CardsDealt]
+    C --> D[PlayerHit]
+    D --> E[PlayerStand]
+    E --> F[DealerRevealed]
+    F --> G[PayoutCompleted]
+    
+    style A fill:#f9f,stroke:#333
+    style G fill:#bbf,stroke:#333
+```
+
+### BlackJack Integration Points
+```mermaid
+flowchart LR
+    BJ[Blackjack] -->| ReserveFunds| AC[Accounting]
+    BJ -->| GetTrueRandom| RNG[RNG Service]
+    BJ -->| PublishOutcome| ES[EventStore]
+    BJ -->| NotifyResult| WS[WebSockets]
+    WS -->|Push| Player[Player UI]
+```
 
 ### Racing module
 ```mermaid
