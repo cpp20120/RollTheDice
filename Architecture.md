@@ -6,11 +6,8 @@ Games:
 * black jack
 
 Year  confirmation at User service
-
 CrypotGraphic random(System.Security.Cryptography)
-
 No real money just  Bipki( virtual currency)
-
 ### Modules
 ```mermaid
 flowchart TD
@@ -29,11 +26,11 @@ flowchart TD
     end
 
     subgraph AppHost .NET Aspire
-        DB[(KurrentDB\nEvent Store + Audit)]
-        Cache[(Redis\nCache + Pub/Sub)]
+        DB[(KurrentDB Event Store + Audit)]
+        Cache[(Redis Cache + Pub/Sub)]
         Bus[[RedPanda]]
         Monitoring[Grafana + Prometheus]
-        LedgerDB[(Postgres\nAccounting Ledger)]
+        LedgerDB[(Postgres Accounting Ledger)]
     end
 
     subgraph Modules
@@ -41,11 +38,15 @@ flowchart TD
         S[Slots.Module]
         R[Racing.Module]
         BJ[Blackjack.Module]
-        U[User.Module]
         N[Notifications]
         A[Analytics]
         Audit[Audit Module]
         AC[Accounting.Module with Saga]
+    end
+
+    subgraph Microservices
+        style U stroke-width:2px,stroke:#ff007f,stroke-dasharray: 5 5,fill:none
+        U[User.Module Microservice]
     end
 
     A1 --> BFF_Tg --> APIGW
@@ -79,13 +80,14 @@ flowchart TD
     AC --> LedgerDB
 
     Monitoring -.-> P & S & R & BJ & Bus & AC
-    
+
     %% Новые политики CB
     CB -->|Fallback| CB_Policy["Accounting CB Policy:
     - Timeout: 1s
     - Retries: 2
     - Break: 1m after 5 failures
     - Fallback: LocalBalanceCache"]
+
 ```
 
 ## Poker
@@ -280,22 +282,28 @@ flowchart TD
     end
 
     subgraph AppHost .NET Aspire
-        DB[(KurrentDB\nEvent Store + Audit)]
-        Cache[(Redis\nCache + Pub/Sub)]
+        DB[KurrentDB Event Store + Audit]
+        Cache[Redis Cache + Pub/Sub]
         Bus[[RedPanda]]
         Monitoring[Grafana + Prometheus]
-        LedgerDB[(Postgres\nAccounting Ledger)]
+        LedgerDB[Postgres Accounting Ledger]
     end
 
     subgraph Modules
         P[Poker.Module]
         S[Slots.Module]
         R[Racing.Module]
-        U[User.Module]
         N[Notifications]
         A[Analytics]
         Audit[Audit Module]
         AC[Accounting.Module with Saga]
+    end
+
+    %% Отдельный микросервис
+    subgraph Microservices
+        style U stroke:#ff007f,stroke-width:2px,stroke-dasharray: 5 5,fill:none
+        U[User.Module Microservice]
+        UDB[UserDB Isolated DB]
     end
 
     A1 --> BFF_Tg --> APIGW
@@ -321,17 +329,21 @@ flowchart TD
 
     Audit --> DB
     P --> DB
-    U --> DB
     AC --> LedgerDB
 
+    U --> UDB
+    UDB -->|CDC| DB
+
     Monitoring -.-> P & S & R & Bus & AC
-    
-    %% New Policies CB
+
+    %% Новые политики CB
     CB -->|Fallback| CB_Policy["Accounting CB Policy:
     - Timeout: 1s
     - Retries: 2
     - Break: 1m after 5 failures
     - Fallback: LocalBalanceCache"]
+
+
 ```
 
 Limits
@@ -536,7 +548,7 @@ RNG verifications
 flowchart TD
     A[PositionEngine] --> B[Add DeterministicRNG]
     B --> C[Seed=RaceId+Round]
-    C --> D[Repeatability of results]
+    C --> D[Повторяемость результатов]
 ```
 
 ## Tournament Module
@@ -584,7 +596,7 @@ stateDiagram-v2
     end note
 ```
 
-### Tournament starts
+### Старт турнира
 ```mermaid
 sequenceDiagram
     participant User
@@ -607,7 +619,7 @@ sequenceDiagram
     end
 ```
 
-### Table rebalancing
+### Ребалансировка столов
 ```mermaid
 flowchart LR
     subgraph Tournament
@@ -651,12 +663,12 @@ flowchart TD
 
 ```
 
-| Parameter | Poker Tournament | Blackjack Tournament |
-| ------------------ | -------------------- | ----------------------------------- |
-| **Victory**         | Last survivor | Highest bankroll after N rounds |
-| **Rebalancing** | Pool tables | Fixed tables |
-| **Timings**       | Growing Blinds | Fixed rounds (3 min)        |
-| **Payments**        | Prizes (1-3) | Top 10% of players |
+| Parameter       | Poker Tournament | Blackjack Tournament            |
+| --------------- | ---------------- | ------------------------------- |
+| **Victory**     | Last survivor    | Highest bankroll after N rounds |
+| **Rebalancing** | Pool tables      | Fixed tables                    |
+| **Timings**     | Growing Blinds   | Fixed rounds (3 min)            |
+| **Payments**    | Prizes (1-3)     | Top 10% of players              |
 
 ### Kafka topics for tournaments
 ```
