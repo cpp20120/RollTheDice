@@ -596,7 +596,7 @@ stateDiagram-v2
     end note
 ```
 
-### Старт турнира
+### Start of tournament
 ```mermaid
 sequenceDiagram
     participant User
@@ -619,7 +619,7 @@ sequenceDiagram
     end
 ```
 
-### Ребалансировка столов
+### Table rebalancing
 ```mermaid
 flowchart LR
     subgraph Tournament
