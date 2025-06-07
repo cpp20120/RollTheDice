@@ -323,7 +323,7 @@ flowchart TD
 
     Monitoring -.-> P & S & R & Bus & AC
     
-    %% Новые политики CB
+    %% New Policies CB
     CB -->|Fallback| CB_Policy["Accounting CB Policy:
     - Timeout: 1s
     - Retries: 2
@@ -533,7 +533,7 @@ RNG verifications
 flowchart TD
     A[PositionEngine] --> B[Add DeterministicRNG]
     B --> C[Seed=RaceId+Round]
-    C --> D[Повторяемость результатов]
+    C --> D[Repeatability of results]
 ```
 
 ## Tournament Module
