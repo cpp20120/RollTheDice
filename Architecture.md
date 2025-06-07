@@ -8,6 +8,8 @@ Games:
 Year  confirmation at User service
 CrypotGraphic random(System.Security.Cryptography)
 No real money just  Bipki( virtual currency)
+This is a learning project to study microservices, not casinos. All currencies are virtual and have no value.
+
 ### Modules
 ```mermaid
 flowchart TD
